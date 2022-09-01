@@ -10,7 +10,7 @@ pipeline {
             steps {
                 echo "What is custom deploy url?: ${deployEnv} \n"
                 script {
-                    final String url = '$deployEnv$task_id'
+                    final String url = '$deployEnv$task_id' + '/'
 
                     final String response = sh(script: "curl -s $url | jq '.query_result[] | {task_id, entry_date, status}'", returnStdout: true).trim()
 
