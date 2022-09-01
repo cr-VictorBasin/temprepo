@@ -1,11 +1,15 @@
 pipeline {
     agent any
-
+    parameters {
+        string(defaultValue: "TEST", description: "Which env to deploy in?", name: "deployEnv")
+        choice(choices: ["EU-WEST-2A", "EU-WEST-2B", "EU-WEST-2C"], description: "Which AZ to deploy TO?", name: "deployAZ")
+    }
     stages {
         stage("Using curl example") {
             steps {
+                echo "What is custom deploy url?: ${deployEnv} \n"
                 script {
-                    final String url = "http://ds-manager-dev.cr-devops-internal-dev.com:8000/query/tasks/task_id/102973656/"
+                    final String url = ${deployEnv}
 
                     final String response = sh(script: "curl -s $url | jq '.query_result[] | {task_id, entry_date, status}'", returnStdout: true).trim()
 
