@@ -3,7 +3,8 @@ pipeline {
     parameters {
         string(defaultValue: "di-manager-url", description: "Which env to deploy in?", name: "deployEnv")
         string(defaultValue: "23442", description: "Which task_id to lookup ?", name: "task_id")
-        choice(choices: ["di-manager-dev-url", "di-manager-dev-di-url", "di-manager-prod-url"], description: "Which di-manager to lookup for?", name: "di-manager")
+        choice(choices: ["di-manager-dev-url", "di-manager-dev-di-url", "di-manager-prod-url"], \
+                        description: "Which di-manager to lookup for?", name: "di-manager")
     }
     stages {
         stage("Using curl example") {
