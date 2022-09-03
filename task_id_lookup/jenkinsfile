@@ -3,14 +3,14 @@ pipeline {
     parameters {
         string(defaultValue: "di-manager-url", description: "Which env to deploy in?", name: "deployEnv")
         string(defaultValue: "23442", description: "Which task_id to lookup ?", name: "task_id")
-        choice(choices: ["EU-WEST-2A", "EU-WEST-2B", "EU-WEST-2C"], description: "Which AZ to deploy TO?", name: "deployAZ")
+        choice(choices: ["di-manager-dev-url", "di-manager-dev-di-url", "di-manager-prod-url"], description: "Which di-manager to lookup for?", name: "di-manager")
     }
     stages {
         stage("Using curl example") {
             steps {
                 echo "What is custom deploy url?: ${deployEnv} \n"
                 script {
-                    final String url = '$deployEnv$task_id' + '/'
+                    final String url = 'http://' + '$deployEnv$task_id' + '/'
 
                     final String response = sh(script: "curl -s $url | jq '.query_result[] | {task_id, entry_date, status}'", returnStdout: true).trim()
 
