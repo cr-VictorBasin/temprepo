@@ -13,7 +13,7 @@ pipeline {
                 script {
                     final String url = 'http://' + '$deployEnv$task_id' + '/'
 
-                    final String response = sh(script: "curl -s $url | jq '.query_result[] | {task_id, entry_date, status}'", returnStdout: true).trim()
+                    final String response = sh(script: "curl -s $url | jq '.query_result[] | {task_id, entry_date, status, exit_msg}'", returnStdout: true).trim()
 
                     echo response
                 }
