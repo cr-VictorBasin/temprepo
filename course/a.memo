@@ -1,0 +1,28 @@
+vico
+sdsdsdsd
+sdsdsdsd
+sdscdvdfvdfdf4545fg
+
+@here working on cr-prod-hp2-as-ne1(DHL) elastic cluster please ignore alerts.
+@here maintenance on  cr-prod-hp2-as-ne1(DHL) elastic cluster is over please resume monitoring
+
+cr-prod-hp1-as-se1
+
+curl -k https://127.0.0.1:9200/_cat/health?pretty -u elastic:U87P^wK@ev
+
+curl -k -u elastic:U87P^wK@ev https://127.0.0.1:9200/_cat/health?pretty
+
+
+curl -k -u elastic:U87P^wK@ev https://127.0.0.1:9200/_cat/shards?h=index,shard,prirep,state,unassigned.reason
+curl -k -u elastic:U87P^wK@ev https://127.0.0.1:9200/_cluster/allocation/explain?pretty 
+
+curl -k -u elastic:U87P^wK@ev -XGET https://localhost:9200/_cat/allocation?v
+curl -k -u elastic:U87P^wK@ev -XGET https://localhost:9200/_shard_stores?pretty 
+
+
+curl -k -u elastic:U87P^wK@ev -XPOST 'https://localhost:9200/_cluster/reroute' '{ "commands": [ { "allocate_empty_primary": { "index": ".monitoring-kibana-7-2022.12.25", "shard": 0 , "node": "elastic-cluster-cr-prod-hp1-as-se1-instance-0.prod.cybereason.net", "accept_data_loss" : true } } ] }'
+
+curl -k -u elastic:U87P^wK@ev -XDELETE 'https://localhost:9200/.monitoring-es-7-2022.12.24'
+curl -k -u elastic:U87P^wK@ev -XDELETE 'https://localhost:9200/.monitoring-es-7-2022.12.22'
+curl -k -u elastic:U87P^wK@ev -XDELETE 'https://localhost:9200/.slm-history-3-000001'
+curl -k -u elastic:U87P^wK@ev -XDELETE 'https://localhost:9200/.apm-agent-configuration'

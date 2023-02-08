@@ -1,0 +1,150 @@
+pipeline {
+    agent { label 'gcp-dev' }
+    environment {
+        def myApi = "/elastic/new/fullapi/create_new_elastic_cluster/"
+        def myCSRFToken = "\"X-CSRFToken: ZdCPlvKdodRcMlyKkcwsIB96eqVd5WrrpWAWXIynPjg3c29dF6uI2YG02FuK2q8s\""
+        def curl_head = ' -H "accept: application/json" -H  "Content-Type: application/json" '
+        def clr_type = "elastic"
+        def instances_zone_list = params.INSTANCES_ZONE_LIST.toLowerCase()
+        def management_ports_access = params.MANAGEMENT_PORTS_ACCESS.toLowerCase()
+        def elastic_external_access_cidr_list = params.ELASTIC_EXTERNAL_ACCESS_CIDR_LIST.toLowerCase()
+        def ssh_port_22_cidr_ranges = params.SSH_PORT_22_CIDR_RANGES.toLowerCase()
+        def management_access_cidr_list = params.MANAGEMENT_ACCESS_CIDR_LIST.toLowerCase()
+    }
+    parameters {
+        choice(name: 'env_type', choices: ['dev', 'dev-di', 'prod'], description: 'Which env_type?')
+        string(name: 'project_id', description: 'What is GCP project_id?')                
+        string(name: 'cluster_name', description: 'What is a new cluster_name?')
+        choice(name: 'region', choices: ['us-east1', 'us-east4', 'us-west4', 'europe-north1', 'europe-west3', 'eu-west3', 'europe-west1','asia-southeast1', 'asia-northeast1'], description: 'Which region?')
+        string(name: 'slm_enabled', defaultValue: 'no')
+        string(name: 'elastic_source_image', defaultValue: 'centos-8s-elastic', description: 'Which source_image?')
+        string(name: 'elastic_instance_type', defaultValue: 'n2-standard-4', description: 'Which elastic_instance_type?')
+        string(name: 'master_instance_type', defaultValue: 'n2-standard-2', description: 'Which master_instance_type?')
+        string(name: 'client_instance_type', defaultValue: 'n2-standard-4', description: 'Which client_instance_type?')
+        string(name: 'host_project', defaultValue: 'cr-dev-hp-1-9e4874', description: 'Which host_project?')
+        string(name: 'subnetwork_name', defaultValue: 'cr-dev-hp-1-us-east1-flat-subnet')
+        string(name: 'domain', defaultValue: 'cr-devops-internal-dev.com.', description: 'cr-devops-internal-dev.com. or eng.cybereason.net. for DI dev')
+        string(name: 'zone_name', defaultValue: 'cr-devops-internal-dev-com', description: 'cr-devops-internal-dev-com or eng-gcp for DI dev')
+        string(name: 'dns_project', defaultValue: 'devops-dns-dev', description: 'devops-dns-dev or cr-core-dev-host-project-fe70 for DI dev')
+        string(name: 'INSTANCES_ZONE_LIST', defaultValue: """[\\\\\\"us-east1-b\\\\\\",\\\\\\"us-east1-c\\\\\\",\\\\\\"us-east1-d\\\\\\"]""")
+        string(name: 'elastic_per_zone_count', defaultValue: '2')
+        string(name: 'master_count', defaultValue: '3')
+        string(name: 'client_count', defaultValue: '2')
+        string(name: 'management_instance_count', defaultValue: '2')
+        string(name: 'client_data_disk_size', defaultValue: '100')
+        string(name: 'master_data_disk_size', defaultValue: '100')
+        string(name: 'MANAGEMENT_PORTS_ACCESS', defaultValue: """[\\\\\\"9308\\\\\\",\\\\\\"7072\\\\\\",\\\\\\"9000\\\\\\",\\\\\\"5601\\\\\\"]""")
+        string(name: 'elastic_git_version', defaultValue: 'latest')
+        choice(name: 'di_certificate_compatability', choices: ['yes', 'no'])
+        string(name: 'target_mail_address', defaultValue: 'username@cybereason.com', description: 'What is your email?')
+        string(name: 'ELASTIC_EXTERNAL_ACCESS_CIDR_LIST', defaultValue: """[\\\\\\"172.16.201.0/24\\\\\\",\\\\\\"10.2.0.0/16\\\\\\",\\\\\\"10.3.0.0/16\\\\\\",\\\\\\"10.4.0.0/16\\\\\\",\\\\\\"213.57.123.22/32\\\\\\",\\\\\\"212.29.231.122/32\\\\\\"]""")
+        string(name: 'SSH_PORT_22_CIDR_RANGES', defaultValue: """[\\\\\\"10.241.2.46/32\\\\\\",\\\\\\"172.16.201.0/24\\\\\\",\\\\\\"213.57.123.22/32\\\\\\",\\\\\\"212.29.231.122/32\\\\\\"]""")
+        string(name: 'MANAGEMENT_ACCESS_CIDR_LIST', defaultValue: """[\\\\\\"10.241.2.46/32\\\\\\",\\\\\\"172.16.201.0/24\\\\\\",\\\\\\"213.57.123.22/32\\\\\\",\\\\\\"212.29.231.122/32\\\\\\"]""")
+    }
+
+    stages {
+        stage("Build a new Elastic cluster") {
+            steps {
+                script { 
+                echo "custom  params.env_type : ${params.env_type} \n"
+                if (params.project_id.toBoolean()) {
+                    echo "ABORTED custom project_id : ${params.project_id} \n"
+                    currentBuild.result = 'ABORTED'
+                    error('Provide project_id')
+                }
+                if (params.env_type == "dev") {
+                     di_man_addr  = "http://ds-manager-dev.cr-devops-internal-dev.com:8000"
+                   } else if (params.env_type == "dev-di") {
+                     di_man_addr  = "http://ds-manager-dev-di.cr-devops-internal-dev.com:8000"
+                   } else if (params.env_type == "prod") {
+                     di_man_addr  = "http://ds-manager-prod.cr-devops-internal-dev.com:8000"
+                } else {
+                    echo "ABORTED custom params.env_type : ${params.env_type} \n"
+                    currentBuild.result = 'ABORTED'
+                    error('Unknown env_type')
+                }
+                myurl = "$di_man_addr" +
+                        "$myApi" +
+                        "$curl_head" +
+                        "-H $myCSRFToken"  +
+                        ' -d "{ \\"project_id\\": \\"' +
+                        "$project_id" + 
+                        '\\", \\"cluster_name\\": \\"' +
+                        "$cluster_name" + 
+                        '\\", \\"region\\":\\\"' +
+                        "$region" +
+                        '\\\", \\"env_type\\": \\"' + 
+                        "$env_type" + 
+                        '\\", \\"slm_enabled\\": \\"' +
+                        "$slm_enabled" + 
+                        '\\", \\"elastic_source_image\\": \\"' +
+                        "$elastic_source_image" + 
+                        '\\", \\"elastic_instance_type\\": \\"' +
+                        "$elastic_instance_type" + 
+                        '\\", \\"master_instance_type\\": \\"' +
+                        "$master_instance_type" + 
+                        '\\", \\"client_instance_type\\": \\"' +
+                        "$client_instance_type" + 
+                        '\\", \\"host_project\\": \\"' +
+                        "$host_project" +
+                        '\\", \\"subnetwork_name\\": \\"' +
+                        "$subnetwork_name" +
+                        '\\", \\"domain\\": \\"' +
+                        "$domain" + 
+                        '\\", \\"zone_name\\": \\"' +
+                        "$zone_name" +
+                        '\\", \\"dns_project\\": \\"' +
+                        "$dns_project" +
+                        '\\", \\"instances_zone_list\\": \\"' +
+                        "$instances_zone_list" +
+                        '\\", \\"elastic_per_zone_count\\": \"' +
+                        "$elastic_per_zone_count" +
+                        '\", \\"master_count\\": \"' +
+                        "$master_count" +
+                        '\", \\"client_count\\": \"' +
+                        "$client_count" +
+                        '\", \\"client_data_disk_size\\": \\"' +
+                        "$client_data_disk_size" +
+                        '\\", \\"master_data_disk_size\\": \\"' +
+                        "$master_data_disk_size" +
+                        '\\", \\"elastic_external_access_cidr_list\\": \\"' +
+                        "$elastic_external_access_cidr_list" +
+                        '\\", \\"ssh_port_22_cidr_ranges\\": \\"' +
+                        "$ssh_port_22_cidr_ranges" +
+                        '\\", \\"management_access_cidr_list\\": \\"' +
+                        "$management_access_cidr_list" +
+                        '\\", \\"management_ports_access\\": \\"' +
+                        "$management_ports_access" +
+                        '\\", \\"management_instance_count\\": \"' +
+                        "$management_instance_count" +
+                        '\", \\"di_certificate_compatability\\": \\"' +
+                        "$di_certificate_compatability" +
+                        '\\", \\"elastic_git_version\\": \\"' +
+                        "$elastic_git_version" +
+                        '\\", \\"target_mail_address\\": \\"' +
+                        "$target_mail_address" +
+                        '\\"}"'
+                echo "What is custom deploy url?: ${myurl} \n"
+                task_id = sh(script: "curl -X POST $myurl | jq -r '.task_id'", returnStdout: true).trim()
+                echo "end of stage running, task_id: ${task_id}"               
+                }
+            }
+        }
+        stage("task_id lookup") {
+            steps {
+                script { 
+                echo "catched task_id is: ${task_id}"
+                build job: 'task_id_lookup', parameters: [string(name: 'task_id', value: "${task_id}"), string(name: 'env_type', value: "${env_type}")]
+                }
+            }
+        }
+        stage("sanity_test") {
+            steps {
+                script { 
+                sleep(time: 240, unit: "SECONDS")
+                build job: 'sanity_test', parameters: [string(name: 'cluster_name', value: "${cluster_name}"), string(name: 'project_id', value: "${project_id}"), string(name: 'clr_type', value: "${clr_type}"), string(name: 'env_type', value: "${env_type}")]
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,42 @@
+discovery.seed_hosts: elastic-cluster-cr-prod-hp2-eu-west1-b-master-0.prod.cybereason.net.,elastic-cluster-cr-prod-hp2-eu-west1-b-master-1.prod.cybereason.net.,elastic-cluster-cr-prod-hp2-eu-west1-b-master-2.prod.cybereason.net.
+cluster.name: cr-prod-hp2-eu-west1-b
+cluster.routing.allocation.awareness.attributes: zone
+cluster.routing.allocation.awareness.force.zone.values: europe-west1-b
+discovery.zen.minimum_master_nodes: 2
+indices.breaker.total.limit: 90%
+network.bind_host: 0.0.0.0
+network.host: elastic-cluster-cr-prod-hp2-eu-west1-b-instance-4.prod.cybereason.net
+node.attr.box_type: hot
+node.roles: [data, data_content, data_hot, ingest, ml, remote_cluster_client, transform]
+node.attr.zone: europe-west1-b
+node.name: elastic-cluster-cr-prod-hp2-eu-west1-b-instance-4.prod.cybereason.net
+path.data: '/es_data/cr-prod-hp2-eu-west1-b'
+path.logs: '/var/log/elasticsearch/'
+thread_pool.write.queue_size: 2000
+xpack.monitoring.collection.enabled: 'true'
+xpack.monitoring.enabled: 'true'
+xpack.security.authc.realms.file.file1.order: 1
+xpack.security.authc.realms.native.native1.order: 0
+xpack.security.enabled: 'true'
+xpack.security.http.ssl.client_authentication: optional
+xpack.security.http.ssl.enabled: 'true'
+xpack.security.http.ssl.keystore.password: O70wOhXm
+xpack.security.http.ssl.keystore.path: ssl/elastic.server.keystore.jks
+xpack.security.http.ssl.keystore.type: PKCS12
+xpack.security.http.ssl.supported_protocols:
+- TLSv1.3
+- TLSv1.2
+xpack.security.http.ssl.truststore.password: O70wOhXm
+xpack.security.http.ssl.truststore.path: ssl/elastic.server.truststore.jks
+xpack.security.http.ssl.verification_mode: certificate
+xpack.security.transport.ssl.client_authentication: optional
+xpack.security.transport.ssl.enabled: 'true'
+xpack.security.transport.ssl.keystore.password: O70wOhXm
+xpack.security.transport.ssl.keystore.path: ssl/elastic.server.keystore.jks
+xpack.security.transport.ssl.keystore.type: PKCS12
+xpack.security.transport.ssl.supported_protocols:
+- TLSv1.3
+- TLSv1.2
+xpack.security.transport.ssl.truststore.password: O70wOhXm
+xpack.security.transport.ssl.truststore.path: ssl/elastic.server.truststore.jks
+xpack.security.transport.ssl.verification_mode: certificate
