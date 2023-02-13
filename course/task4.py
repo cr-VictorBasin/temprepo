@@ -24,3 +24,7 @@ es.nodes.hot_threads(node_id=node_name)
 es.cluster.health(wait_for_status="green")
 
 
+
+cluster_instance_groups_dict(task_id, project_id, cluster_name, stack=None):
+
+
