@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cr-dr-vico-conn-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cr-dr-vico-conn
+  template:
+    metadata:
+      labels:
+        app: cr-dr-vico-conn
+    spec:
+      containers:
+      - name: conn-pod
+        image: docker.io/bitnami/kafka:3.5.1-debian-11-r72
+        command: ["/bin/bash", "-c", "sleep 12000"]
+        volumeMounts:
+        - name: confvol
+          mountPath: /tmp/
+      volumes:
+      - name: confvol
+        hostPath:
+          path: /home/centos/ssl_cert
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kafka
+                operator: In
+                values:
+                - connect
+      tolerations:
+      - key: kafka
+        operator: Equal
+        value: connect
+        effect: NoSchedule

@@ -1,0 +1,64 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  namespace: cloudflow
+  name: cr-dr-func-us-conn
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  image: "cybereason/camel-kafkaconnect:version2"
+  command: ["/bin/sh"]
+  args: ["-c", "while true; do echo hello; sleep 10;done"]
+  version: 3.2.3
+  replicas: 1
+  bootstrapServers: "kafka-cluster-ng-dr-func-us-e1-instance-0.dr.cybereason.net:9093"
+  tls: # <- Set CA cluster certificate (1)
+    trustedCertificates:
+      - secretName: ca-cert
+        certificate: ca.crt
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: kafka-super
+      certificate: user.crt
+      key: user.key
+  externalConfiguration:
+    volumes:
+      - name: vol-conn-auth-tls
+        secret:
+          secretName: kafka-conn-auth-tls
+  config:
+    config.providers: directory,secrets
+    config.providers.directory.class: org.apache.kafka.common.config.provider.DirectoryConfigProvider
+    config.providers.secrets.class: io.strimzi.kafka.KubernetesSecretConfigProvider
+    group.id: connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    config.storage.replication.factor: -1
+    offset.storage.replication.factor: -1
+    status.storage.replication.factor: -1
+    security.protocol: SSL
+    ssl.truststore.location: /tmp/kafka/cluster.truststore.p12
+    ssl.truststore.password: password
+    ssl.keystore.location: /tmp/kafka/kafka.keystore.p12
+    ssl.keystore.password: password
+    ssl.key.password: password
+  template:
+    pod:
+      imagePullSecrets:
+        - name: dockerhub
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kafka
+                operator: In
+                values:
+                - connect
+      tolerations:
+      - key: kafka
+        operator: Equal
+        value: connect
+        effect: NoSchedule

@@ -1,0 +1,115 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: cloudflow
+  namespace: cloudflow
+  labels:
+    app: kafka-broker
+spec:
+  kafka:
+    config:
+      default.replication.factor: 1
+      inter.broker.protocol.version: "3.5.2"
+      min.insync.replicas: 1
+      offsets.topic.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      transaction.state.log.replication.factor: 1
+    listeners:
+    - name: plain
+      port: 9092
+      tls: false
+      type: internal
+    replicas: 5
+    resources:
+      limits:
+        cpu: "4"
+        memory: 32Gi
+      requests:
+        cpu: "4"
+        memory: 32Gi
+    storage:
+      type: jbod
+      volumes:
+      - deleteClaim: true
+        id: 0
+        size: 100Gi
+        type: persistent-claim
+        class: kafka-broker
+    version: 3.5.0
+    template:
+      pod:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kafka
+                  operator: In
+                  values:
+                  - broker
+        tolerations:
+        - key: kafka
+          operator: Equal
+          value: broker
+          effect: NoSchedule
+  entityOperator:
+    topicOperator:
+      resources:
+        limits:
+          cpu: 256m
+          memory: 512Mi
+        requests:
+          cpu: 256m
+          memory: 512Mi
+    userOperator:
+      resources:
+        limits:
+          cpu: 256m
+          memory: 512Mi
+        requests:
+          cpu: 256m
+          memory: 512Mi
+  zookeeper:
+    config:
+      quorumListenOnAllIPs: true
+      tls: false
+    jvmOptions:
+      -Xms: 512m
+      -Xmx: 512m
+      javaSystemProperties:
+      - name: zookeeper.ssl.hostnameVerification
+        value: "false"
+      - name: zookeeper.ssl.quorum.hostnameVerification
+        value: "false"
+    replicas: 5
+    resources:
+      limits:
+        cpu: "2"
+        memory: 4Gi
+      requests:
+        cpu: "2"
+        memory: 4Gi
+    storage:
+      deleteClaim: true
+      size: 100Gi
+      type: persistent-claim
+      class: kafka-sc
+    template:
+      pod:
+        metadata:
+          labels:
+            app: zookeeper
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kafka
+                  operator: In
+                  values:
+                  - zookeeper
+        tolerations:
+        - key: kafka
+          operator: Equal
+          value: zookeeper
+          effect: NoSchedule

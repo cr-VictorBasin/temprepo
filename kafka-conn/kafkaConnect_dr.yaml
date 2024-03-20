@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: cloudflow
+  name: cr-dr-vico-conn-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cr-dr-vico-conn
+  template:
+    metadata:
+      labels:
+        app: cr-dr-vico-conn
+    pod:
+      imagePullSecrets:
+        - name: dockerhub
+    spec:
+      containers:
+      - name: conn-pod
+        image: cybereason/camel-kafkaconnect:version2
+        command: ["/bin/bash", "-c", "sleep 12000"]
+        volumeMounts:
+        - name: confvol
+          mountPath: /tmp/
+      volumes:
+      - name: confvol
+        hostPath:
+          path: /home/centos/ssl_cert
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kafka
+                operator: In
+                values:
+                - connect
+      tolerations:
+      - key: kafka
+        operator: Equal
+        value: connect
+        effect: NoSchedule

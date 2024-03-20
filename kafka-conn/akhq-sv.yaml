@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: akhq-vs
+  namespace: akhqns
+spec:
+  gateways:
+  - istio-system/private-gateway
+  hosts:
+  - akhq-global-k8s.dr.cybereason.net
+  http:
+  - match:
+    - uri:
+        prefix: /ui
+    route:
+    - destination:
+        host: akhq
+        port:
+          number: 80
+      weight: 100
+  - route:
+    - destination:
+        host: akhq
+        port:
+          number: 80

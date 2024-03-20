@@ -1,0 +1,41 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: cloudflow
+  namespace: cloudflow
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  bootstrapServers: cloudflow-kafka-bootstrap:9092
+  config:
+    batch.size: 100
+    group.id: recordings
+    key.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+    value.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+  image: cybereason/camel-kafkaconnect:version2
+  replicas: 5
+  resources:
+    limits:
+      cpu: "2"
+      memory: 8Gi
+    requests:
+      cpu: "2"
+      memory: 8Gi
+  template:
+    pod:
+      imagePullSecrets:
+        - name: dockerhub
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kafka
+                operator: In
+                values:
+                - connect
+      tolerations:
+      - key: kafka
+        operator: Equal
+        value: connect
+        effect: NoSchedule
